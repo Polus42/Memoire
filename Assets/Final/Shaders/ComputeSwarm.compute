@@ -1,0 +1,94 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+#include "UnityCG.cginc"
+#include "SimplexNoise3D.cginc"
+static int bulletNumber = 10;
+CBUFFER_START(Params)
+	uint InstanceCount;
+	float Damping;
+	float Spread;
+	float FollowForce;
+	float NoiseFrequency;
+	float NoiseForce;
+	float3 NoiseOffset;
+CBUFFER_END
+
+struct PositionStruct
+{
+	float3 pos;
+};
+struct VelocityStruct
+{
+	float3 vel;
+};
+struct TimeStruct
+{
+	float t;
+};
+struct TouchedStruct
+{
+	float t;
+};
+RWStructuredBuffer<PositionStruct> Position;
+RWStructuredBuffer<VelocityStruct> Velocity;
+StructuredBuffer<TimeStruct> Time;
+StructuredBuffer<PositionStruct> FollowPoint;
+RWStructuredBuffer<TouchedStruct> Touched;
+RWStructuredBuffer<PositionStruct> Bullets;
+
+float Random(float u, float v)
+{
+	float f = dot(float2(12.9898, 78.233), float2(u, v));
+	return frac(43758.5453 * sin(f));
+}
+float3 RandomPoint(float id)
+{
+	float u = Random(id * 0.01334, 0.3728) * UNITY_PI * 2;
+	float z = Random(0.8372, id * 0.01197) * 2 - 1;
+	float l = Random(4.438, id * 0.01938 - 4.378);
+	return float3(float2(cos(u), sin(u)) * sqrt(1 - z * z), z) * sqrt(l);
+}
+
+[numthreads(1, 1, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+	float3 p = RandomPoint(id.x);
+	float3 pos = Position[id.x].pos;
+	// If touched : sensible to gravity and falling to the ground
+	if (Touched[id.x].t==1)
+	{
+		if (pos.y< 0.5)
+		{
+			Velocity[id.x].vel.y = abs(Velocity[id.x].vel.y);
+			Velocity[id.x].vel /= 2;
+			//pos.y = Velocity[id.x].vel.y*2;
+		}
+		else
+		{
+			Velocity[id.x].vel.y -= 0.01;
+		}
+		pos += Velocity[id.x].vel;
+		Position[id.x].pos = pos;
+	}
+	else
+	{
+		Velocity[id.x].vel *= Damping;
+		{
+			Velocity[id.x].vel += (FollowPoint[0].pos - Position[id.x].pos)* FollowForce + snoise((Position[id.x].pos + NoiseOffset) *NoiseFrequency)*NoiseForce;
+		}
+		for (int i = 0; i < bulletNumber;i++)
+		{
+			if (distance(Position[id.x].pos, Bullets[i].pos) < 5)
+			{
+				Touched[id.x].t = 1;
+				Velocity[id.x].vel = p;
+				Bullets[i].pos = float3(0,0,0);
+			}
+		}
+		// Keeping them off the ground
+		Velocity[id.x].vel.y += (1/pos.y)*10;
+
+		pos += Velocity[id.x].vel;
+		Position[id.x].pos = pos + p*Spread;
+	}
+}
