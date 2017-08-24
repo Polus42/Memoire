@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 [RequireComponent(typeof(ComputeSwarm))]
 public class DemoOptions : MonoBehaviour {
-    [HideInInspector]
+
     public static bool activated = false;
     public static bool FPSactivated = false;
     public GameObject FramerateWatcher,MemoryWatcher;
@@ -14,12 +14,16 @@ public class DemoOptions : MonoBehaviour {
     int hSliderValue = 1;
     bool usingGPU = false;
     bool usingFixedUpdate = false;
+    bool usingFastMaterial = false;
+    bool rendering = true;
     #endregion
     void Start () {
         hSliderValue = swarm.instanceCount;
         usingGPU = swarm.usingGPU;
         usingFixedUpdate = swarm.usingFixedUpdate;
-        StartCoroutine(augmentInstanceCount());
+        usingFastMaterial = swarm.usingFastMaterial;
+        rendering = swarm.rendering;
+        //StartCoroutine(augmentInstanceCount());
     }
 	
 	void Update () {
@@ -57,6 +61,8 @@ public class DemoOptions : MonoBehaviour {
         swarm.instanceCount = hSliderValue;
         swarm.usingGPU = usingGPU;
         swarm.usingFixedUpdate = usingFixedUpdate;
+        swarm.usingFastMaterial = usingFastMaterial;
+        swarm.rendering = rendering;
     }
     private void OnGUI()
     {
@@ -71,6 +77,10 @@ public class DemoOptions : MonoBehaviour {
             GUI.Label(new Rect(0, 170, 500, 30), swarm.computeTime.ToString());
             GUI.Label(new Rect(0, 200, 500, 30), "USING Fixed Update ?");
             usingFixedUpdate = GUI.Toggle(new Rect(0, 230, 30, 30), usingFixedUpdate, "");
+            GUI.Label(new Rect(0, 250, 500, 30), "USING Fast Material ?");
+            usingFastMaterial = GUI.Toggle(new Rect(0, 270, 30, 30), usingFastMaterial, "");
+            GUI.Label(new Rect(0, 300, 500, 30), "Rendering ?");
+            rendering = GUI.Toggle(new Rect(0, 330, 30, 30), rendering, "");
             GUI.EndScrollView();
         }
     }
@@ -78,8 +88,8 @@ public class DemoOptions : MonoBehaviour {
     {
         while (true)
         {
-            hSliderValue+=100;
-            CSVExport.LogCSV(new string[] { Time.time.ToString(),Time.deltaTime.ToString() });
+            hSliderValue+=1000;
+            CSVExport.LogCSV(new string[] { swarm.instanceCount.ToString(),Time.deltaTime.ToString() });
             yield return new WaitForSeconds(0.1f);
         }
     }

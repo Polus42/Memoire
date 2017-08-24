@@ -47,7 +47,18 @@
 		unity_WorldToObject._11_22_33 = 1.0f / unity_WorldToObject._11_22_33;
 #endif
 	}
-
+	float Random(float u, float v)
+	{
+		float f = dot(float2(12.9898, 78.233), float2(u, v));
+		return frac(43758.5453 * sin(f));
+	}
+	float3 RandomPoint(float id)
+	{
+		float u = Random(id * 0.01334, 0.3728) * UNITY_PI * 2;
+		float z = Random(0.8372, id * 0.01197) * 2 - 1;
+		float l = Random(4.438, id * 0.01938 - 4.378);
+		return float3(float2(cos(u), sin(u)) * sqrt(1 - z * z), z) * sqrt(l);
+	}
 	half _Glossiness;
 	half _Metallic;
 
@@ -55,12 +66,12 @@
 		//fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
 		fixed4 c = float4(0,1,0,1);
 #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
-		c = sin(100 / distance(followPoint[0], positionBuffer[unity_InstanceID]));
+		c.rgb = RandomPoint(unity_InstanceID);
 		if(touchedBuffer[unity_InstanceID]==1)
 			c = float4(1, 0, 0,1);
 		//c.rgb = float3(0,0,0);
 #endif
-		o.Emission = c.rgb;
+		o.Emission = c.rgb*0.8;
 		o.Albedo = c;
 		o.Metallic = _Metallic;
 		o.Smoothness = _Glossiness;

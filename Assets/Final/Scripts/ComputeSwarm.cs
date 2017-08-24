@@ -19,15 +19,9 @@ public class ComputeSwarm : MonoBehaviour
     public bool usingFixedUpdate = false;
     #endregion
 
-    #region Music Interactions
-    [Range(0,255)]
-    public int musicFrequency = 0;
-    [Range(0, 1)]
-    public float musicFilter = 0.1f;
     public Mesh instanceMesh;
     public Material instanceMaterial;
     public ComputeShader computeShader;
-    #endregion
 
     #region Compute Shader Buffers
     private int cachedInstanceCount = -1;
@@ -65,6 +59,7 @@ public class ComputeSwarm : MonoBehaviour
 
     public Material fastMaterial;
     public bool usingFastMaterial = false;
+    public bool rendering = true;
 
     [HideInInspector]
     public float computeTime = 0;
@@ -97,7 +92,7 @@ public class ComputeSwarm : MonoBehaviour
             computeTime = Time.realtimeSinceStartup - time;
         }
         // Render
-        if(!usingFastMaterial)
+        if(!usingFastMaterial&&rendering)
         {
             Graphics.DrawMeshInstancedIndirect(instanceMesh, 0, instanceMaterial, new Bounds(Vector3.zero, Vector3.one * 10000), argsBuffer);
         }
@@ -105,7 +100,7 @@ public class ComputeSwarm : MonoBehaviour
     }
     private void postRender(Camera cam)
     {
-        if(usingFastMaterial)
+        if(usingFastMaterial&&rendering)
         {
             fastMaterial.SetPass(0);
             fastMaterial.SetBuffer("buf_Points", positionBuffer);
